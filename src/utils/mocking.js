@@ -1,34 +1,33 @@
-//    /src/utils/mocking.js
-
+import bcrypt from 'bcrypt';
 import { faker } from '@faker-js/faker';
-import { createHash } from './index.js';
 
-// Generar usuarios
-export const generateMockUsers = async (num) => {
-    const users = [];
-    for (let i = 0; i < num; i++) {
-        users.push({
-            first_name: faker.person.firstName(),
-            last_name: faker.person.lastName(),
-            email: faker.internet.email(),
-            password: await createHash("coder123"),
-            role: faker.helpers.arrayElement(['user', 'admin']),
-            pets: []
-        });
-    }
-    return users;
+export const generateUsers = (count) => {
+  const users = [];
+  for (let i = 0; i < count; i++) {
+    users.push({
+      firstName: faker.name.firstName(),
+      lastName: faker.name.lastName(),
+      email: faker.internet.email(),
+      password: bcrypt.hashSync('coder123', 10), // Encriptar contraseña
+      role: faker.random.arrayElement(['user', 'admin']), // Rol aleatorio
+      pets: [], // Array vacío
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+  }
+  return users;
 };
 
-// Generar mascotas
-export const generateMockPets = (num) => {
-    const pets = [];
-    for (let i = 0; i < num; i++) {
-        pets.push({
-            name: faker.animal.petName(),
-            specie: faker.helpers.arrayElement(['dog', 'cat', 'bird']),
-            birthDate: faker.date.past(10),
-            adopted: false
-        });
-    }
-    return pets;
+export const generatePets = (count) => {
+  const pets = [];
+  for (let i = 0; i < count; i++) {
+    pets.push({
+      name: faker.name.firstName(),
+      species: faker.random.arrayElement(['dog', 'cat', 'bird']),
+      adopted: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+  }
+  return pets;
 };

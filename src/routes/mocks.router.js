@@ -1,34 +1,58 @@
-//    /src/routes/mocks.router.js
-
 import { Router } from 'express';
-import { generateMockUsers, generateMockPets } from '../utils/mocking.js';
-import { usersService, petsService } from '../services/index.js';
+import { generateUsers, generatePets } from '../utils/mocking.js';
+import User from '../dao/models/User.js';
+import Pet from '../dao/models/Pet.js';
+import logger from '../utils/logger.js'; // Importar logger
 
 const router = Router();
 
-
-router.get('/mockingpets', (req, res) => {
-    const pets = generateMockPets(50); // por poner un número, 50 mascotas
-    res.send({ status: 'success', payload: pets });
+router.get('/mockingpets', async (req, res, next) => {
+  try {
+    logger.info('Generando datos de mocking para mascotas');
+    const pets = generatePets(50);
+    res.status(200).json(pets);
+  } catch (error) {
+    logger.error(`Error en /mockingpets: ${error.message}`);
+    next(error);
+  }
 });
 
-// Endpoint para generar usuarios ficticios
-router.get('/mockingusers', async (req, res) => {
-    const users = await generateMockUsers(50);
-    res.send({ status: 'success', payload: users });
+router.get('/mockingusers', async (req, res, next) => {
+  try {
+    logger.info('Generando datos de mocking para usuarios');
+    const users = generateUsers(50);
+    res.status(200).json(users);
+  } catch (error) {
+    logger.error(`Error en /mockingusers: ${error.message}`);
+    next(error);
+  }
 });
 
-// Endpoint para generar e insertar datos en la DB
-router.post('/generateData', async (req, res) => {
-    const { users = 0, pets = 0 } = req.body;
+router.post('/generateData', async (req, res, next) => {
+  try {
+    const { users, pets } = req.body;
+    logger.info(`Generando ${users} usuarios y ${pets} mascotas`);
 
-    const mockUsers = await generateMockUsers(users);
-    const mockPets = generateMockPets(pets);
+    if (!users || !pets || isNaN(users) || isNaN(pets)) {
+      throw new Error('Parámetros "users" y "pets" deben ser numéricos');
+    }
 
-    await usersService.create(mockUsers);
-    await petsService.create(mockPets);
+    const generatedUsers = generateUsers(users);
+    const generatedPets = generatePets(pets);
 
-    res.send({ status: 'success', message: `${users} usuarios y ${pets} mascotas generadas e insertadas.` });
+    const insertedUsers = await User.insertMany(generatedUsers);
+    const insertedPets = await Pet.insertMany(generatedPets);
+
+    logger.info(`Insertados ${insertedUsers.length} usuarios y ${insertedPets.length} mascotas`);
+    res.status(201).json({
+      message: 'Datos generados e insertados correctamente',
+      users: insertedUsers,
+      pets: insertedPets,
+    });
+  } catch (error) {
+    logger.error(`Error en /generateData: ${error.message}`);
+    next(error);
+  }
 });
 
 export default router;
